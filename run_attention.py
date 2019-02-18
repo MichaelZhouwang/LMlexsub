@@ -973,6 +973,13 @@ def load_vocab(vocab_file):
       index += 1
   return vocab
 
+def get_index(list_candidates, candidate):
+
+    if candidate in list_candidates:
+        return list_candidates.index(candidate)
+    else:
+        return 200
+    
 def line2candidate(result_file, input_file, vocab, methode = 'add'):
     results = open(result_file,'r',encoding='utf-8').readlines()
     print(len(results))
