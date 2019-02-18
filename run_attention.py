@@ -702,7 +702,7 @@ def create_model(bert_config, is_training, input_ids, input_mask, segment_ids,
     attention_values, attention_indices = tf.nn.top_k(target_attention, k=20)
     attention_list.append(attention_indices)
     value_list.append(attention_values)
-  probabilities = {'attention_indices':tf.stack(attention_list), 'attention_values': tf.stack(value_list), indice_proposed = proposal_indices}
+  probabilities = {'attention_indices':tf.stack(attention_list), 'attention_values': tf.stack(value_list), 'indice_proposed':proposal_indices}
   return (loss, per_example_loss, logits, probabilities)
 
 
@@ -1203,39 +1203,24 @@ def main(_):
     print(result)
 
     output_predict_file = os.path.join(FLAGS.output_dir, "attention.tsv")
-
+    output_proposal_file = os.path.join(FLAGS.output_dir, "proposed_substitute_candidates.tsv")
     inv_vocab = {index : word for (word, index) in vocab.items()}
 
     with tf.gfile.GFile(output_predict_file, "w") as writer:
-      tf.logging.info("***** Predict results *****")
-      '''
-      for prediction in result:
-        for candidate_id in prediction:
-          output_line = inv_vocab[candidate_id] + ' '
-          writer.write(output_line)
-        writer.write('\n')
-      '''
-      for prediction in result:
-        for indice,value in zip(prediction['attention_indices'], prediction['attention_values']):
-          output_line = str(indice) + ' ' + str(value) + '\t'
-          writer.write(output_line)
-        writer.write('\n')
-
-
-    output_proposal_file = os.path.join(FLAGS.output_dir, "proposed_substitute_candidates.tsv")
-
-    with tf.gfile.GFile(output_proposal_file, "w") as writer:
-      tf.logging.info("***** Predict results *****")
-      for prediction in result:
-        for candidate_id in prediction[indice_proposed]:
-          output_line = inv_vocab[candidate_id] + ' '
-          writer.write(output_line)
-        writer.write('\n')
-    
+        with tf.gfile.GFile(output_proposal_file, "w") as writer_p:
+          tf.logging.info("***** Predict results *****")
+          for prediction in result:
+            for candidate_id in prediction['indice_proposed']:
+              output_line = inv_vocab[candidate_id] + ' '
+              writer_p.write(output_line)
+            writer_p.write('\n')
+            for indice,value in zip(prediction['attention_indices'], prediction['attention_values']):
+              output_line = str(indice) + ' ' + str(value) + '\t'
+              writer.write(output_line)
+            writer.write('\n')
+            
     num_lines = len(open("lst_all.preprocessed",'r').readlines())
-
     line2candidate("./lexsub_output/proposed_substitute_candidates.tsv",'lst_all.preprocessed',vocab)
-
     attention2context(num_lines)
 
 
